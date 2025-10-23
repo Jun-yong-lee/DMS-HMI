@@ -1,8 +1,8 @@
 config = {'SAVE_PATH': '/media/imlab/Samsung_T54/dms_rev1/',
-          'VERSION': 'v1.4.0',
+          'VERSION': 'v1.5.0',
           'DRIVER_LIST': ["Sejoon", "Geesung",\
                           "Gawon", "Chanyoung",\
-                          "Byeongjin"],
+                          "Byeongjin", "Junyong"],
           'CAN': {'inference': False,
                   'print_can_status': True},
           'GNSS': {'trf_info_request_period': 10.0,
@@ -20,11 +20,14 @@ config = {'SAVE_PATH': '/media/imlab/Samsung_T54/dms_rev1/',
           # '''
           'DATA': {'HMI': True, #Human Machine Interface
                    'CAN': True,
+                   'CAN_C': True,
+                   'CAN_M': True,
                    'INSIDE_FRONT_CAMERA': True,
                    'INSIDE_SIDE_CAMERA': False,
                    'OUTSIDE_FRONT_CENTER_CAMERA': True,
                    'audio': False,
                    'GNSS' : True,
+                   'KEY_INPUT' : True,
                   #  '''
                   #  TRAFFIC_INFO must be collected with GNSS
                   #  '''
