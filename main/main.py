@@ -85,7 +85,7 @@ def main():
     #####################
 
     ### Driving cycle check ###
-    check_driving_cycle(P_db, can_bus_c)
+    # check_driving_cycle(P_db, can_bus_c)
     time.sleep(0.5)
 
 
