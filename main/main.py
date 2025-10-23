@@ -23,11 +23,6 @@ def main():
     from receive_GNSS import receive_GNSS
     from receive_image import receive_realsense
     from check_status import check_driving_cycle, check_velocity, check_driver, check_odometer, check_intention, check_passenger, check_weight
-    # from config import config
-
-    # version = config['VERSION']['version']
-    # save_path = config['PATH']['SAVE_PATH']
-    # driver_list = eval(config['DRIVER']['driver_list'])
 
     start_time = time.time()
 
