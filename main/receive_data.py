@@ -47,7 +47,7 @@ def sync_process():
         pass
 
 
-def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_status, stop_event):
+def receive_CAN_C(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_status, stop_event):
     print(f"[INFO] PID[{os.getpid()}] '{d_name}' process is started.")
 
     CAN_PATH = DATASET_PATH + '/CAN/'
@@ -60,9 +60,8 @@ def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_stat
     C_msg_name = []
 
     # P_msg_list = ['CGW1', 'EMS2', 'EBS1', 'ESP12', 'SAS11', 'WHL_SPD11', 'HCU3']
-    C_msg_list = ['HEV_PC1', 'HEV_PC2', 'HEV_PC4', 'HEV_PC5','HEV_PC6', 'HEV_PC12', 'SAS11', 'ESP12', 'WHL_SPD11', 'CGW1', 'CLU12', 'CLU15', \
-                  'DATC3', 'CGW4', 'TCS15', 'BCW11']    # 20250902 gawon 새메세지 추가
-
+    C_msg_list = ['HEV_PC1', 'HEV_PC2', 'HEV_PC4', 'HEV_PC5', 'HEV_PC6', 'HEV_PC12', 'SAS11', 'ESP12', 'WHL_SPD11', 'CGW1', 'CLU12', 'CLU15', \
+                  'DATC3', 'CGW4', 'TCS15', 'BCW11']
 
     MSG_LENGTH = 0
     # for msg in P_db.messages:
@@ -97,8 +96,7 @@ def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_stat
                         'CF_Ems_BrkForAct', 'CR_Ems_EngColTemp_C', 'CF_Clu_InhibitD', \
                         'CF_Clu_InhibitN', 'CF_Clu_InhibitP', 'CF_Clu_InhibitR', \
                         'CF_Clu_VehicleSpeed', 'CF_Clu_Odometer', 'CF_Gway_TSigLHSw', 'CF_Gway_TSigRHSw', \
-                        # 20250902 gawon 새칼럼 추가
-                        'CF_Datc_TempDispUnit', 'CF_Gway_HazardSw', 'CF_Gway_WiperSwState', 'CF_Gway_WiperIntT', 'CF_Gway_WiperIntSw', 'CF_Gway_WiperLowSw', \
+                        'CF_Gway_HazardSw', 'CF_Gway_WiperSwState', 'CF_Gway_WiperIntT', 'CF_Gway_WiperIntSw', 'CF_Gway_WiperLowSw', \
                         'CF_Gway_WiperHighSw', 'CF_Gway_WiperAutoSw', 'CF_Gway_DrvSeatBeltSw', 'ESC_Off_Step', 'CF_BCW_Stat', 'CF_Gway_HoodSw' \
                         ]
     
@@ -106,7 +104,6 @@ def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_stat
     ### timestamp2 : timestamp from PC
     timestamp_cols = ['timestamp', 'timestamp2']
     df = pd.DataFrame(columns=timestamp_cols)
-    # can_monitoring = {'ESP12': -1, 'SAS11': -1, 'WHL_SPD11': -1}
     can_monitoring = {'ESP12': -1, 'SAS11': -1, 'WHL_SPD11': -1, 'IND_LEFT': -1, 'IND_RIGHT': -1}
 
     cnt = 0
@@ -124,9 +121,6 @@ def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_stat
             st = time.time()
             for msg in db_msg:
                 if can_msg.arbitration_id == msg.frame_id:
-                    # if msg.name in P_msg_name :
-                    #     can_dict = P_db.decode_message(can_msg.arbitration_id, can_msg.data)
-                    # if msg.name in C_msg_name :
                     can_dict = C_db.decode_message(can_msg.arbitration_id, can_msg.data)
                     can_dict = {k: v for k, v in can_dict.items() if k in C_signal_names}
                     can_dict['timestamp'] = can_msg.timestamp
@@ -135,10 +129,10 @@ def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_stat
                     if len(df.columns) >= len(C_signal_names) + len(timestamp_cols):
                         if save_flag:
                             if first:
-                                df.to_csv(CAN_PATH + f"{start_time}.csv", index=False)
+                                df.to_csv(CAN_PATH + f"{start_time}_C.csv", index=False)
                                 first = False
                             else:
-                                df.to_csv(CAN_PATH + f"{start_time}.csv", mode='a', header=False, index=False)
+                                df.to_csv(CAN_PATH + f"{start_time}_M.csv", mode='a', header=False, index=False)
 
                         cnt += 1
                         df = df[0:0]
@@ -175,6 +169,90 @@ def receive_CAN(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_stat
     print(f"[INFO] PID[{os.getpid()}] '{d_name}' # of CAN[{cnt}] MEAN_TIME[{time_total / cycle:.6f}] CYCLE[{cycle}]")
     print(f"[INFO] PID[{os.getpid()}] '{d_name}' process is terminated.")
 
+def receive_CAN_M(d_name, save_flag, DATASET_PATH, M_db, can_bus, print_status, stop_event):
+    print(f"[INFO] PID[{os.getpid()}] '{d_name}' process is started.")
+
+    CAN_PATH = DATASET_PATH + '/CAN/'
+    if save_flag:
+        if not os.path.isdir(CAN_PATH):
+            os.mkdir(CAN_PATH)
+
+    db_msg = []
+    M_msg_name = []
+
+    M_msg_list = ['CLU_HU_PE_01', 'HU_CLU_PE_05', 'GW_IPM_PE_2', 'HU_Car_PE_01', 'HU_DATC_PE_00',]
+
+    MSG_LENGTH = 0
+
+    for msg in M_db.messages:
+        if msg.name in M_msg_list:
+            db_msg.append(msg)
+            M_msg_name.append(msg.name)
+            MSG_LENGTH += len(msg.signals)
+
+
+    M_signal_names = ['HU_VolumeStatus', 'C_DRVUnlockState', 'HU_VehiclePwr', 'HU_PhoneActivity', 'Clu_RheostatLvl',]
+
+    ### timestamp : timestamp from CAN device
+    ### timestamp2 : timestamp from PC
+    timestamp_cols = ['timestamp', 'timestamp2']
+    df = pd.DataFrame(columns=timestamp_cols)
+    can_monitoring = {'IND_LEFT': -1, 'IND_RIGHT': -1}
+
+    cnt = 0
+    first = True
+    time_total = 0.
+    cycle = 0
+    # sync_process()
+    print(f"[INFO] PID[{os.getpid()}] '{d_name}' process starts collecting.")
+    st_time = time.time()
+    start_time = time.strftime("%Y_%m_%d_%H_%M", time.localtime(st_time))
+    while(True):
+        try:
+            can_msg = can_bus.recv()
+            timestamp2 = time.time()
+            st = time.time()
+            for msg in db_msg:
+                if can_msg.arbitration_id == msg.frame_id:
+                    can_dict = M_db.decode_message(can_msg.arbitration_id, can_msg.data)
+                    can_dict = {k: v for k, v in can_dict.items() if k in M_signal_names}
+                    can_dict['timestamp'] = can_msg.timestamp
+                    can_dict['timestamp2'] = timestamp2
+
+                    if len(df.columns) >= len(M_signal_names) + len(timestamp_cols):
+                        if save_flag:
+                            if first:
+                                df.to_csv(CAN_PATH + f"{start_time}_M.csv", index=False)
+                                first = False
+                            else:
+                                df.to_csv(CAN_PATH + f"{start_time}_M.csv", mode='a', header=False, index=False)
+
+                        cnt += 1
+                        df = df[0:0]
+                        df = df.append(can_dict, ignore_index=True)
+                    else:
+                        cnt += 1
+                        df = df.append(can_dict, ignore_index=True)
+
+                    # For monitoring
+                    if print_status:
+                        if msg.name == 'HU_CLU_PE_05':
+                            can_monitoring['HU_VolumeStatus'] = can_dict['HU_VolumeStatus']
+            if print_status:
+                record_time = str(dt.timedelta(seconds=(st - st_time))).split(".")[0]
+                print("[INFO] TIME[{}] HU_VolumeStatus[{}]".format(record_time, can_monitoring['HU_VolumeStatus']), end='\r')
+            time_total += (time.time() - st)
+            cycle += 1
+
+            if stop_event.is_set():
+                break
+
+        except Exception as e:
+            if stop_event.is_set():
+                break
+
+    print(f"[INFO] PID[{os.getpid()}] '{d_name}' # of CAN[{cnt}] MEAN_TIME[{time_total / cycle:.6f}] CYCLE[{cycle}]")
+    print(f"[INFO] PID[{os.getpid()}] '{d_name}' process is terminated.")
 
 def receive_video(d_name, save_flag, DATASET_PATH, frontView, sideView, send_conn, stop_event):
     print(f"[INFO] PID[{os.getpid()}] '{d_name}' process is started.")
