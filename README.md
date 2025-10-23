@@ -10,6 +10,7 @@ Driver Monitoring System
 * v1.1.0 : Front-view external video (Internal camera is a temporary suspension) [Release Date : 2022-12-27]
 * v1.2.0 : Replace the internal cameras with the RealSense Cameras [Release Date : 2023-03-31]
 * v1.3.0 : Add left & right indicator signals to CAN signal [Release Date : 2023-04-10]
+* v1.4.1 : Add Weather info [Release Date : 2024-05-23]
 
 ## Build environments
 * sudo apt install ffmpeg
