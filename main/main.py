@@ -85,7 +85,7 @@ def main():
     #####################
 
     ### Driving cycle check ###
-    # check_driving_cycle(P_db, can_bus_c)
+    check_driving_cycle(P_db, can_bus_c)
     time.sleep(0.5)
 
 
@@ -135,7 +135,7 @@ def main():
                       receive_realsense,
                       ] # visualize_video
     func_args = {'CAN_C': (P_db, C_db, can_bus_c, print_can_status),
-                 'CAN_M': (P_db, C_db, can_bus_c, print_can_status),
+                 'CAN_M': (M_db, can_bus_m, print_can_status),
                  'KEY_INPUT': (),
                  'audio': (FORMAT, RATE, CHANNELS, CHUNK),
                  'GNSS': (config, print_gnss_status, receive_trf_info),
