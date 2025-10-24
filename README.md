@@ -1,7 +1,7 @@
 # DMS
 Driver Monitoring System
 
-## Updates Histopy
+## Updates History
 * v0.0 : Initial version        [Released Date : 2021-07-01]
 * v0.1 : CAN signal update      [Released Date : 2021-08-20]
 * v0.2 : HMI & odometer update  [Release Date : 2021-09-13]
@@ -11,6 +11,7 @@ Driver Monitoring System
 * v1.2.0 : Replace the internal cameras with the RealSense Cameras [Release Date : 2023-03-31]
 * v1.3.0 : Add left & right indicator signals to CAN signal [Release Date : 2023-04-10]
 * v1.4.1 : Add Weather info [Release Date : 2024-05-23]
+* v1.5.0 : M-CAN signal & Key input update   [Release Date : 2025-10-24]
 
 ## Build environments
 * sudo apt install ffmpeg
