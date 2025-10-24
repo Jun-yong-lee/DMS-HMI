@@ -85,12 +85,12 @@ def main():
     #####################
 
     ### Driving cycle check ###
-    check_driving_cycle(P_db, can_bus_c)
+    check_driving_cycle(C_db, can_bus_c)
     time.sleep(0.5)
 
 
     ### Velocity status check ###
-    # check_velocity(P_db, can_bus)
+    check_velocity(C_db, can_bus_c)
     time.sleep(0.5)
 
 
@@ -189,7 +189,7 @@ def main():
 
 
     ### Velocity status check ###
-    # check_velocity(P_db, can_bus)
+    check_velocity(C_db, can_bus_c)
     time.sleep(0.5)
 
 
