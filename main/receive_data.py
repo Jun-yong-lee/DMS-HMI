@@ -132,7 +132,7 @@ def receive_CAN_C(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_st
                                 df.to_csv(CAN_PATH + f"{start_time}_C.csv", index=False)
                                 first = False
                             else:
-                                df.to_csv(CAN_PATH + f"{start_time}_M.csv", mode='a', header=False, index=False)
+                                df.to_csv(CAN_PATH + f"{start_time}_C.csv", mode='a', header=False, index=False)
 
                         cnt += 1
                         df = df[0:0]
