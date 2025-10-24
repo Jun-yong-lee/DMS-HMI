@@ -119,7 +119,10 @@ def main():
     stop_event = multiprocessing.Event()
     send_conn, recv_conn = multiprocessing.Pipe()
 
-    data_names = ['CAN', 'audio',
+    data_names = ['CAN_C',
+                  'CAN_M',
+                  'KEY_INPUT',
+                  'audio',
                   'GNSS',
                   #'INSIDE_FRONT_CAMERA',    #gawon 비활성화 0625
                   #'INSIDE_SIDE_CAMERA',
