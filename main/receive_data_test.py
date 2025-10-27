@@ -1,128 +1,154 @@
 import os
 import time
-import threading
-import csv
-import json
-
-import can                           # python-can
-import cantools                     # https://github.com/cantools/cantools
+import pandas as pd
+import cantools
+import can
 from config import config
 
 
-def sniff_can_dbc(
-    d_name: str,
-    save_flag: bool,
-    dataset_path: str,
-    dbc_filename: str,
-    can_bus,
-    print_status: bool,
-    stop_event: threading.Event
-):
+def receive_CAN_test(db, can_bus, save_path, save_flag=True, print_status=False, stop_event=None,
+                  msg_list=None, signal_names=None):
     """
-    1) config['SAVE_PATH']/dbc 폴더에서 지정된 dbc_filename 로드
-    2) can_bus.recv() 로부터 실제 프레임 수신
-    3) 새로운 메시지 등장 시 메시지명+시그널명 콘솔 출력
-    4) stop_event.set() 시 루프 종료 후 CSV/TXT 로 결과 저장
+    실제 환경에서 CAN 신호를 받아와 csv로 저장하는 테스트 함수
     """
-    import os
-    import csv
-    import json
+    msg_list = msg_list if msg_list else []
+    signal_names = signal_names if signal_names else []
 
-    print(f"[INFO] PID[{os.getpid()}] '{d_name}' listener started (DBC: {dbc_filename}).")
+    CAN_PATH = os.path.join(save_path, 'CAN')
+    if save_flag and not os.path.isdir(CAN_PATH):
+        os.makedirs(CAN_PATH)
 
-    # 1) DBC 로드
-    CAN_basePath = os.path.join(config['SAVE_PATH'], 'dbc')
-    dbc_path = os.path.join(CAN_basePath, dbc_filename)
-    if not os.path.isfile(dbc_path):
-        raise FileNotFoundError(f"DBC 파일이 없습니다: {dbc_path}")
-    db = cantools.database.load_file(dbc_path)
-    print(f"[INFO] Loaded {len(db.messages)} messages from '{dbc_filename}'")
+    db_msg = []
+    for msg in db.messages:
+        if msg.name in msg_list:
+            db_msg.append(msg)
 
-    # 2) 저장 폴더 준비
-    can_path = os.path.join(dataset_path, 'CAN')
-    if save_flag and not os.path.isdir(can_path):
-        os.makedirs(can_path)
+    timestamp_cols = ['timestamp', 'timestamp2']
+    df = pd.DataFrame(columns=timestamp_cols)
 
-    # 3) 모니터링 자료구조
-    seen_msgs   = set()   # 이미 본 메시지 이름
-    msg_signals = {}      # { msg_name: [sig1, sig2, ...] }
+    cnt = 0
+    first = True
+    start_time = time.strftime("%Y_%m_%d_%H_%M", time.localtime(time.time()))
+    print(f"[INFO] CAN 수집 시작 ({start_time})")
 
-    print(f"[INFO] PID[{os.getpid()}] '{d_name}' start sniffing CAN bus...")
-    # 4) CAN 수신 루프
-    while not stop_event.is_set():
+    while(True):
         try:
-            frame = can_bus.recv()   # arbitration_id, data, timestamp…
-        except Exception:
+            can_msg = can_bus.recv()
+            timestamp2 = time.time()
+            for msg in db_msg:
+                if can_msg.arbitration_id == msg.frame_id:
+                    can_dict = db.decode_message(can_msg.arbitration_id, can_msg.data)
+                    # row = {k: can_dict.get(k, None) for k in signal_names}
+                    can_dict = {k: v for k, v in can_dict.items() if k in signal_names}
+                    can_dict['timestamp'] = can_msg.timestamp
+                    can_dict['timestamp2'] = timestamp2
+
+                    if len(df.columns) >= len(signal_names) + len(timestamp_cols):
+                        if save_flag:
+                            if first:
+                                df.to_csv(CAN_PATH + f"{start_time}_test.csv", index=False)
+                                first = False
+                            else:
+                                df.to_csv(CAN_PATH + f"{start_time}_test.csv", mode='a', header=False, index=False)
+
+                        cnt += 1
+                        df = df[0:0]
+                        df = df.append(can_dict, ignore_index=True)
+                    else:
+                        cnt += 1
+                        df = df.append(can_dict, ignore_index=True)
+
+            # if stop_event is not None and stop_event.is_set():
+            #     break
+
+        except KeyboardInterrupt:
+            print("[INFO] 수집 중단 (KeyboardInterrupt)")
             break
-        try:    
-            msg = db.get_message_by_frame_id(frame.arbitration_id)
-            if msg is None:
-                continue
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            break
 
-            # 새로운 메시지 탐지
-            if msg.name not in seen_msgs:
-                seen_msgs.add(msg.name)
-                signals = [sig.name for sig in msg.signals]
-                msg_signals[msg.name] = signals
+    # # 남은 데이터 저장
+    # if save_flag and not df.empty:
+    #     if first:
+    #         df.to_csv(os.path.join(CAN_PATH, f"{start_time}_test.csv"), index=False)
+    #     else:
+    #         df.to_csv(os.path.join(CAN_PATH, f"{start_time}_test.csv"), mode='a', header=False, index=False)
 
-                print("\n=== New CAN Message Detected ===")
-                print(f"Message: {msg.name} (ID=0x{msg.frame_id:X}, DLC={msg.length})")
-                print("Signals:")
-                for s in signals:
-                    print(f"  - {s}")
-                print("=" * 30)
-        except:
-            print("aa")
-            pass
-    # 루프 종료
-    print(f"\n[INFO] PID[{os.getpid()}] '{d_name}' sniffing stopped.")
-    print(f"[INFO] Total unique messages: {len(seen_msgs)}")
-
-    # 5) 결과 저장
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    csv_path = os.path.join(can_path, f"{os.path.splitext(dbc_filename)[0]}_messages_{ts}.csv")
-    with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        writer.writerow(["MessageName", "SignalNames"])
-        for m, sig_list in msg_signals.items():
-            writer.writerow([m, ";".join(sig_list)])
-    print(f"[INFO] Saved CSV: {csv_path}")
-
-    txt_path = os.path.join(can_path, f"{os.path.splitext(dbc_filename)[0]}_messages_{ts}.txt")
-    with open(txt_path, 'w', encoding='utf-8') as f:
-        json.dump(msg_signals, f, ensure_ascii=False, indent=2)
-    print(f"[INFO] Saved TXT: {txt_path}")
-
+    print(f"[INFO] CAN 수집 종료, 총 {cnt}개 프레임 저장됨.")
 
 if __name__ == "__main__":
-    # CAN 버스 초기화
-    can_bus = can.interface.Bus(
-        bustype='socketcan',
-        channel='can0',
-        bitrate=500000
-    )
+    can_name = "M" # "C"
+    save_path = config['SAVE_PATH']
 
-    # 메인 설정
-    SAVE_FLAG   = config['MEASUREMENT']
-    DATASET_DIR = os.path.join(config['SAVE_PATH'], 'check_data')
-    PRINT_STAT  = config['CAN']['print_can_status']
+    if can_name == "M":
+        save_path = save_path
+        CAN_basePath = os.path.join(save_path, 'dbc')
+        M_db = cantools.database.load_file(os.path.join(CAN_basePath, 'M_CAN.dbc'))
 
-    # 사용할 DBC 파일명 (config나 인자로 변경 가능)
-    dbc_file = 'M_CAN.dbc'  # 예: 'P_CAN.dbc', 'C_CAN.dbc', 'M_CAN.dbc' 등
+        can_bus_m = can.interface.Bus('can2', bustype='socketcan')
 
-    # 스레드 이벤트
-    stop_evt = threading.Event()
+        msg_list = ['CLU_HU_PE_01',
+                    'HU_Car_PE_01',
 
-    try:
-        sniff_can_dbc(
-            d_name='CAN',
-            save_flag=SAVE_FLAG,
-            dataset_path=DATASET_DIR,
-            dbc_filename=dbc_file,
-            can_bus=can_bus,
-            print_status=PRINT_STAT,
-            stop_event=stop_evt
-        )
-    except KeyboardInterrupt:
-        stop_evt.set()
-        print("[INFO] KeyboardInterrupt received. Exiting...")
+                    'HU_CLU_PE_05',
+                    'GW_IPM_PE_2',
+                    'HU_DATC_PE_00',
+
+                    # 'TP_HU_FM_CLU',
+                    # 'TP_HU_CLU_HF'
+                    ]
+
+        signal_names = ['Clu_RheostatLvl',
+                        'HU_VehiclePwr',
+                        'HU_VolumeStatus',
+                        'C_DRVUnlockState',
+                        'HU_PhoneActivity',
+            # 'Byte0_TCP_485', 'Byte0_TCP_4E8'
+            ]
+
+        save_flag = True
+
+        # 함수 호출
+        receive_CAN_test(M_db, can_bus_m, save_path, save_flag=save_flag, print_status=True, msg_list=msg_list, signal_names=signal_names)
+        
+    elif can_name == "C":
+        save_path = save_path
+        CAN_basePath = os.path.join(save_path, 'dbc')
+        C_db = cantools.database.load_file(os.path.join(CAN_basePath, 'C_CAN.dbc'))
+
+        can_bus_c = can.interface.Bus('can0', bustype='socketcan')
+
+        msg_list = ['HEV_PC1', 'HEV_PC2', 'HEV_PC4',
+                    'HEV_PC5','HEV_PC6', 'HEV_PC12',
+                    'SAS11', 'ESP12', 'WHL_SPD11',
+                    'CGW1', 'CLU12', 'CLU15',
+                    'DATC3',
+                    'CGW4', 'TCS15',
+                    'BCW11'
+                    ]
+        
+        signal_names = ['CF_Ems_EngStat', 'CR_Brk_StkDep_Pc', 'CR_Ems_AccPedDep_Pc',
+                        'CR_Ems_EngSpd_rpm', 'CR_Ems_FueCon_uL', 'CR_Ems_VehSpd_Kmh',
+                        'CF_Tcu_TarGe', 'SAS_Angle', 'CYL_PRES',
+                        'CYL_PRES_FLAG', 'LAT_ACCEL', 'LONG_ACCEL',
+                        'YAW_RATE', 'WHL_SPD_FL', 'WHL_SPD_FR',
+                        'WHL_SPD_RL', 'WHL_SPD_RR', 'BAT_SOC',
+                        'CF_Gway_HeadLampHigh', 'CF_Gway_HeadLampLow', 'CR_Hcu_HigFueEff_Pc',
+                        'CR_Hcu_NorFueEff_Pc', 'CF_Hcu_DriveMode', 'CR_Fatc_OutTempSns_C',
+                        'CR_Hcu_EcoLvl', 'CR_Hcu_FuelEco_MPG', 'CR_Hcu_HevMod',
+                        'CF_Ems_BrkForAct', 'CR_Ems_EngColTemp_C', 'CF_Clu_InhibitD',
+                        'CF_Clu_InhibitN', 'CF_Clu_InhibitP', 'CF_Clu_InhibitR',
+                        'CF_Clu_VehicleSpeed', 'CF_Clu_Odometer', 'CF_Gway_TSigLHSw', 'CF_Gway_TSigRHSw',
+                        # latest added signals
+                        'CF_Datc_TempDispUnit',
+                        'CF_Gway_HazardSw', 'CF_Gway_WiperSwState', 'CF_Gway_WiperIntT', 'CF_Gway_WiperIntSw', 'CF_Gway_WiperLowSw', \
+                        'CF_Gway_WiperHighSw', 'CF_Gway_WiperAutoSw', 'CF_Gway_DrvSeatBeltSw', 'ESC_Off_Step', 'CF_BCW_Stat', 'CF_Gway_HoodSw'
+                        ]
+
+        save_flag = True
+
+        # 함수 호출
+        receive_CAN_test(C_db, can_bus_c, save_path, save_flag=save_flag, print_status=True, msg_list=msg_list, signal_names=signal_names)
+    else:
+        print("Invalid CAN name. Please use 'M' or 'C'.")
