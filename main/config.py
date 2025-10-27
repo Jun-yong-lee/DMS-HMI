@@ -2,7 +2,8 @@ config = {'SAVE_PATH': '/media/imlab/Samsung_T54/dms_rev1/',
           'VERSION': 'v1.5.0',
           'DRIVER_LIST': ["Sejoon", "Geesung",\
                           "Gawon", "Chanyoung",\
-                          "Byeongjin", "Junyong"],
+                          "Byeongjin", "Junyong",\
+                          "Sangjun"],
           'CAN': {'inference': False,
                   'print_can_status': True},
           'GNSS': {'trf_info_request_period': 10.0,
