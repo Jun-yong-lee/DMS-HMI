@@ -97,7 +97,8 @@ def receive_CAN_C(d_name, save_flag, DATASET_PATH, P_db, C_db, can_bus, print_st
                         'CF_Clu_InhibitN', 'CF_Clu_InhibitP', 'CF_Clu_InhibitR', \
                         'CF_Clu_VehicleSpeed', 'CF_Clu_Odometer', 'CF_Gway_TSigLHSw', 'CF_Gway_TSigRHSw', \
                         'CF_Gway_HazardSw', 'CF_Gway_WiperSwState', 'CF_Gway_WiperIntT', 'CF_Gway_WiperIntSw', 'CF_Gway_WiperLowSw', \
-                        'CF_Gway_WiperHighSw', 'CF_Gway_WiperAutoSw', 'CF_Gway_DrvSeatBeltSw', 'ESC_Off_Step', 'CF_BCW_Stat', 'CF_Gway_HoodSw' \
+                        'CF_Gway_WiperHighSw', 'CF_Gway_WiperAutoSw', 'CF_Gway_DrvSeatBeltSw', 'ESC_Off_Step', 'CF_BCW_Stat', 'CF_Gway_HoodSw', \
+                        'CF_Gway_RainSnsState', 'CF_Gway_ParkBrakeSw', 'CF_Gway_DrvDrSw', \
                         ]
     
     ### timestamp : timestamp from CAN device
