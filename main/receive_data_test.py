@@ -143,7 +143,7 @@ if __name__ == "__main__":
                         # latest added signals
                         'CF_Gway_HazardSw', 'CF_Gway_WiperSwState', 'CF_Gway_WiperIntT', 'CF_Gway_WiperIntSw', 'CF_Gway_WiperLowSw', \
                         'CF_Gway_WiperHighSw', 'CF_Gway_WiperAutoSw', 'CF_Gway_DrvSeatBeltSw', 'ESC_Off_Step', 'CF_BCW_Stat', 'CF_Gway_HoodSw', \
-                        'CF_Gway_RainSnsState', 'CF_Gway_ParkBrakeSw', 'CF_Gway_DrvDrSw' #'CF_Gway_WiperParkPosition',# 'CF_Gway_DrvDrSw' \
+                        'CF_Gway_RainSnsState', 'CF_Gway_ParkBrakeSw', 'CF_Gway_DrvDrSw', 'CF_Gway_WiperParkPosition', \
                         ]
 
         save_flag = True
