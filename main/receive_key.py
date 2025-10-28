@@ -14,6 +14,13 @@ def receive_key_input(d_name, save_flag, DATASET_PATH, stop_event):
 
     if save_flag:
         pd.DataFrame(columns=["id", "timestamp2", "event"]).to_csv(events_path, index=False)
+        # 파일 시작 시 RELEASE 1행 추가
+        release_row = pd.DataFrame([{
+            "id": 0,
+            "timestamp2": time.time(),
+            "event": "RELEASE"
+        }])
+        release_row.to_csv(events_path, mode="a", header=False, index=False)
 
     space_down = False
     press_id   = 0
