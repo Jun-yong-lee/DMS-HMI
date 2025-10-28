@@ -6,7 +6,7 @@ from pynput import keyboard
 def receive_key_input(d_name, save_flag, DATASET_PATH, stop_event):
     print(f"[INFO] PID[{os.getpid()}] '{d_name}' process is started.")
 
-    key_dir = os.path.join(DATASET_PATH, "key")
+    key_dir = os.path.join(DATASET_PATH, "KEY")
     if save_flag:
         os.makedirs(key_dir, exist_ok=True)
     start_str = time.strftime("%Y_%m_%d_%H_%M", time.localtime())
